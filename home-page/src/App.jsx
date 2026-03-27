@@ -1,26 +1,76 @@
 import React, { useState } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import Nav from "./components/navbar/Nav";
 import Home from "./pages/home/Home";
 import Cart from "./pages/cart/Cart";
 import Order from "./pages/order/Order";
 import Footer from "./components/footer/Footer";
 import Log from "./components/Log/Log";
+import Verify from "./pages/verify/verify";
+import Orders from "./pages/myord/Orders";
+
+// 🔐 Protected Route
+const ProtectedRoute = ({ children, role }) => {
+  const userRole = localStorage.getItem("role");
+
+  if (!userRole) return <Navigate to="/" />;
+
+  if (role && userRole !== role) {
+    return role === "admin" ? <Navigate to="/" /> : <Navigate to="/admin" />;
+  }
+
+  return children;
+};
 
 const App = () => {
   const [sh, ssh] = useState(false);
+
   return (
     <>
-      {sh ? <Log ssh={ssh}></Log> : <></>}
       <div className="app">
-        <Nav ssh={ssh}></Nav>
+        {sh && <Log sh={sh} ssh={ssh} />}
+        <Nav ssh={ssh} />
+
         <Routes>
-          <Route path="/" element={<Home></Home>}></Route>
-          <Route path="/ct" element={<Cart></Cart>}></Route>
-          <Route path="/od" element={<Order></Order>}></Route>
+          {/* USER ROUTES */}
+          <Route path="/" element={<Home />} />
+
+          <Route
+            path="/ct"
+            element={
+              <ProtectedRoute role="user">
+                <Cart />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/od"
+            element={
+              <ProtectedRoute role="user">
+                <Order />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/myorders"
+            element={
+              <ProtectedRoute role="user">
+                <Orders />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ADMIN ROUTE
+          <Route path="/admin" element={<AdminRedirect />} /> */}
+
+          {/* PUBLIC ROUTES */}
+          <Route path="/verify" element={<Verify />} />
         </Routes>
       </div>
-      <Footer></Footer>
+
+      <Footer />
     </>
   );
 };

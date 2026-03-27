@@ -1,19 +1,72 @@
 import { createContext, useEffect, useState } from "react";
-import { food_list } from "../../assets/assets/frontend_assets/assets";
+import axios from "axios";
 
 export const sc = createContext(null);
 const Sp = ({ children }) => {
+  const [food_list, stf] = useState([]);
+  const url = "http://localhost:4000";
   const [ct, sct] = useState({});
-  const ac = (id) => {
-    if (!ct[id]) {
-      sct((pv) => ({ ...pv, [id]: 1 }));
-    } else {
-      sct((pv) => ({ ...pv, [id]: pv[id] + 1 }));
-    }
-    console.log(ct);
+  const [token, stk] = useState("");
+  const [rl, srl] = useState("");
+  const ff = async () => {
+    const rs = await axios.get(url + "/api/food/list");
+    stf(rs.data.data);
   };
-  const rv = (id) => {
-    sct((pv) => ({ ...pv, [id]: pv[id] - 1 }));
+
+  const ac = async (itemId) => {
+    const currentQty = ct[itemId] || 0;
+    const newQty = currentQty + 1;
+
+    sct((pv) => ({
+      ...pv,
+      [itemId]: newQty,
+    }));
+
+    if (token) {
+      const rs = await axios.post(
+        url + "/api/cart/add",
+        {
+          itemId,
+          quantity: newQty,
+        },
+        { headers: { token } },
+      );
+      console.log(rs.data.message);
+    }
+  };
+  const rv = async (itemId) => {
+    sct((pv) => {
+      const currentQty = pv[itemId] || 0;
+
+      // If quantity will become 0 → remove item completely
+      if (currentQty <= 1) {
+        const newCart = { ...pv };
+        delete newCart[itemId]; // 🔥 THIS is the key
+        return newCart;
+      }
+
+      // Otherwise decrease normally
+      return {
+        ...pv,
+        [itemId]: currentQty - 1,
+      };
+    });
+
+    if (token) {
+      await axios.post(
+        url + "/api/cart/remove",
+        { itemId },
+        { headers: { token } },
+      );
+    }
+  };
+  const lc = async (token) => {
+    const rs = await axios.post(
+      url + "/api/cart/get",
+      {},
+      { headers: { token } },
+    );
+    sct(rs.data.cartData);
   };
   const gtc = () => {
     let tm = 0;
@@ -25,6 +78,18 @@ const Sp = ({ children }) => {
     }
     return tm;
   };
+
+  useEffect(() => {
+    async function ld() {
+      await ff();
+      if (localStorage.getItem("token")) {
+        stk(localStorage.getItem("token"));
+        srl(localStorage.getItem("role"));
+        await lc(localStorage.getItem("token"));
+      }
+    }
+    ld();
+  }, []);
   const cv = {
     food_list,
     ct,
@@ -32,8 +97,14 @@ const Sp = ({ children }) => {
     ac,
     rv,
     gtc,
+    url,
+    token,
+    stk,
+    rl,
+    srl,
   };
 
   return <sc.Provider value={cv}>{children}</sc.Provider>;
 };
+
 export default Sp;

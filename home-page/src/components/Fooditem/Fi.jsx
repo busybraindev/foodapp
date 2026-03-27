@@ -4,11 +4,11 @@ import { assets } from "../../assets/assets/frontend_assets/assets";
 import { sc } from "../context/Context";
 
 const Fi = ({ id, name, price, description, image }) => {
-  const { ct, ac, rv } = useContext(sc);
+  const { ct, ac, rv, url } = useContext(sc);
   return (
     <div className="fi">
       <div className="fct">
-        <img className="fmg" src={image} alt="" />
+        <img className="fmg" src={url + "/images/" + image} alt="" />
         {ct[id] ? (
           <div className="fc">
             <img onClick={() => rv(id)} src={assets.remove_icon_red} alt="" />
